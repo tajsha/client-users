@@ -7,23 +7,44 @@ class UsersController < ApplicationController
   end
 
   def map_result
-    if current_user.role == 'admin'
-      root = current_user.mapklubbs.where('parent_id is null').first
-      mapables = root.descendants.where('latitude is not null and longitude is not null')
-      @hash = Gmaps4rails.build_markers(mapables) do |mapable, marker|
-        marker.lat mapable.latitude
-        marker.lng mapable.longitude
+    if request.xhr?
+      address_ids=[]
+      filter_condition = if params['country'].present?
+                            "mapable_id IN (select id from addresses where country IN (#{params['country'].map { |s| "'#{s}'" }.join(',')})) "+
+                            "AND mapable_type = 'Address' AND latitude is not null and longitude is not null"
+                         else
+                           'latitude is not null and longitude is not null'
+                         end
+      if current_user.role == 'admin'
+        root = current_user.mapklubbs.where('parent_id is null').first
+        mapables = root.descendants.where(filter_condition)
+      else
+        branches = current_user.branches
+        mapables = []
+        branches.each{|branch|
+          mapables << branch.mapklubb.descendants.where(filter_condition)
+        }
       end
+      @hash = mapable_data(mapables)
+      render :json => @hash
     else
-      branches = current_user.branches
-      mapables = []
-      branches.each{|branch|
-        mapables << branch.mapklubb.descendants.where('latitude is not null and longitude is not null')
-      }
-      @hash = Gmaps4rails.build_markers(mapables) do |mapable, marker|
-        marker.lat mapable.latitude
-        marker.lng mapable.longitude
+      if current_user.role == 'admin'
+        root = current_user.mapklubbs.where('parent_id is null').first
+        mapables = root.descendants.where('latitude is not null and longitude is not null')
+        address_ids = []
+        mapables.each{|m| address_ids << m.mapable_id if m.mapable_type == 'Address'}
+        @countries = Address.select(:country).where(:id => address_ids).map(&:country).uniq
+      else
+        branches = current_user.branches
+        mapables = []
+        branches.each{|branch|
+          mapables << branch.mapklubb.descendants.where('latitude is not null and longitude is not null')
+        }
+        address_ids = []
+        mapables.each{|m| address_ids << m.mapable_id if m.mapable_type == 'Address'}
+        @countries = Address.select(:country).where(:id => address_ids).map(&:country).uniq
       end
+      @hash = mapable_data(mapables)
     end
   end
 
@@ -61,6 +82,13 @@ class UsersController < ApplicationController
 
   def secure_params
     params.require(:user).permit(:role)
+  end
+
+  def mapable_data(mapables)
+    Gmaps4rails.build_markers(mapables) do |mapable, marker|
+      marker.lat mapable.latitude
+      marker.lng mapable.longitude
+    end
   end
 
 end
