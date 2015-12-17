@@ -11,7 +11,64 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20151216083347) do
+ActiveRecord::Schema.define(version: 20151216184511) do
+
+  create_table "addresses", force: :cascade do |t|
+    t.string   "line1",      limit: 255
+    t.string   "line2",      limit: 255
+    t.string   "city",       limit: 255
+    t.string   "state",      limit: 255
+    t.string   "country",    limit: 255
+    t.integer  "postcode",   limit: 4
+    t.decimal  "latitude",               precision: 15, scale: 10
+    t.decimal  "longitude",              precision: 15, scale: 10
+    t.datetime "created_at",                                       null: false
+    t.datetime "updated_at",                                       null: false
+  end
+
+  create_table "branches", force: :cascade do |t|
+    t.string   "name",       limit: 255
+    t.string   "contact",    limit: 255
+    t.integer  "mobile",     limit: 4
+    t.integer  "client_id",  limit: 4
+    t.datetime "created_at",             null: false
+    t.datetime "updated_at",             null: false
+  end
+
+  add_index "branches", ["client_id"], name: "index_branches_on_client_id", using: :btree
+
+  create_table "branches_admins", force: :cascade do |t|
+    t.integer "user_id",   limit: 4
+    t.integer "branch_id", limit: 4
+  end
+
+  create_table "clients", force: :cascade do |t|
+    t.string   "name",        limit: 255
+    t.string   "domain_name", limit: 255
+    t.datetime "created_at",              null: false
+    t.datetime "updated_at",              null: false
+  end
+
+  create_table "mapklubb_hierarchies", id: false, force: :cascade do |t|
+    t.integer "ancestor_id",   limit: 4, null: false
+    t.integer "descendant_id", limit: 4, null: false
+    t.integer "generations",   limit: 4, null: false
+  end
+
+  add_index "mapklubb_hierarchies", ["ancestor_id", "descendant_id", "generations"], name: "mapklubb_anc_desc_idx", unique: true, using: :btree
+  add_index "mapklubb_hierarchies", ["descendant_id"], name: "mapklubb_desc_idx", using: :btree
+
+  create_table "mapklubbs", force: :cascade do |t|
+    t.integer  "parent_id",    limit: 4
+    t.datetime "created_at",                                         null: false
+    t.datetime "updated_at",                                         null: false
+    t.integer  "mapable_id",   limit: 4
+    t.decimal  "latitude",                 precision: 15, scale: 10
+    t.decimal  "longitude",                precision: 15, scale: 10
+    t.string   "mapable_type", limit: 255,                           null: false
+  end
+
+  add_index "mapklubbs", ["mapable_id"], name: "index_mapklubbs_on_mapable_id", using: :btree
 
   create_table "users", force: :cascade do |t|
     t.string   "email",                  limit: 255, default: "", null: false
@@ -48,4 +105,5 @@ ActiveRecord::Schema.define(version: 20151216083347) do
   add_index "users", ["invited_by_id"], name: "index_users_on_invited_by_id", using: :btree
   add_index "users", ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true, using: :btree
 
+  add_foreign_key "branches", "clients"
 end

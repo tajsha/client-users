@@ -1,5 +1,5 @@
 source 'https://rubygems.org'
-ruby '2.0.0'
+ruby '2.2.1'
 gem 'rails', '4.2.5'
 gem 'sass-rails', '~> 5.0'
 gem 'uglifier', '>= 1.3.0'
@@ -45,3 +45,7 @@ group :test do
   gem 'launchy'
   gem 'selenium-webdriver'
 end
+gem 'geokit-rails'
+gem 'closure_tree'
+gem 'gmaps4rails'
+gem 'underscore-rails'

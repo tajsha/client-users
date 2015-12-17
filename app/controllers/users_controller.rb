@@ -6,6 +6,27 @@ class UsersController < ApplicationController
     @users = User.all
   end
 
+  def map_result
+    if current_user.role == 'admin'
+      root = current_user.mapklubbs.where('parent_id is null').first
+      mapables = root.descendants.where('latitude is not null and longitude is not null')
+      @hash = Gmaps4rails.build_markers(mapables) do |mapable, marker|
+        marker.lat mapable.latitude
+        marker.lng mapable.longitude
+      end
+    else
+      branches = current_user.branches
+      mapables = []
+      branches.each{|branch|
+        mapables << branch.mapklubb.descendants.where('latitude is not null and longitude is not null')
+      }
+      @hash = Gmaps4rails.build_markers(mapables) do |mapable, marker|
+        marker.lat mapable.latitude
+        marker.lng mapable.longitude
+      end
+    end
+  end
+
   def show
     @user = User.find(params[:id])
     unless current_user.admin?
